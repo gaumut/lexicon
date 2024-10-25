@@ -69,7 +69,7 @@ impl eframe::App for Guiao {
                 }
             });
             if self.show_search {
-                let s = ui.add(egui::TextEdit::singleline(&mut self.search));
+                let s = ui.add(egui::TextEdit::singleline(&mut self.search).desired_width(ui.available_width()));
                 if s.lost_focus() {
                     self.show_search = false;
                     if ui.input(|i| i.key_pressed(egui::Key::Enter)) {
