@@ -38,6 +38,7 @@ struct Guiao {
     show_search: bool,
     search: String,
     last_search: String,
+    invert_color: bool
 }
 
 impl eframe::App for Guiao {
@@ -54,8 +55,17 @@ impl eframe::App for Guiao {
                         self.docs[self.cd].current_page -= 1;
                         self.docs[self.cd].page = None;
                     }
+                    if input.consume_key(Modifiers::NONE, Key::I) {
+                        self.invert_color = !self.invert_color;
+                        for doc in &mut self.docs {
+                            doc.page = None;
+                        }
+                    }
                     if input.consume_key(Modifiers::NONE, Key::Enter) {
                         self.show_search = true;
+                    }
+                    if input.consume_key(Modifiers::SHIFT, Key::Tab) {
+                        self.cd = (self.cd+self.docs.len()-1)%self.docs.len();
                     }
                     if input.consume_key(Modifiers::NONE, Key::Tab) {
                         self.cd = (self.cd+1)%self.docs.len();
@@ -107,7 +117,11 @@ impl eframe::App for Guiao {
                 ro.resolution = pdf2image::DPI::Uniform(self.docs[self.cd].resolution);
                 ro.pdftocairo = true;
                 let image = self.docs[self.cd].pdf.render(pdf2image::Pages::Single(self.docs[self.cd].current_page), ro).unwrap();
-                let image = image[0].clone().to_rgba8();
+                let mut image = image[0].clone();
+                if self.invert_color {
+                    image.invert();
+                }
+                let image = image.to_rgba8();
                 let dim = image.dimensions();
                 //println!("{} {}", dim.0, dim.1);
                 let image = image.as_raw();
@@ -169,6 +183,7 @@ fn main() {
         show_search: false,
         search: String::new(),
         last_search: String::new(),
+        invert_color: false
     };
     let options = eframe::NativeOptions::default();
     eframe::run_native(
