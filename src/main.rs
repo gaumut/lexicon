@@ -1,21 +1,21 @@
 use eframe::egui;
 use egui::*;
-use egui_plot::{PlotImage,Plot,PlotPoint};
+use egui_plot::{Plot, PlotImage, PlotPoint};
 use pdf2image::{RenderOptionsBuilder, PDF};
-use std::env;
 use serde::{Deserialize, Serialize};
+use std::env;
 
 #[derive(Serialize, Deserialize)]
 struct Config {
     replace: Vec<(String, String)>,
-    resolution: u32
+    resolution: u32,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
             replace: Vec::new(),
-            resolution: 300
+            resolution: 300,
         }
     }
 }
@@ -29,7 +29,7 @@ struct Doc {
     index: String,
     search_up_to_date: bool,
     resolution: u32,
-    replace: Vec<(String, String)>
+    replace: Vec<(String, String)>,
 }
 
 struct Guiao {
@@ -38,7 +38,7 @@ struct Guiao {
     show_search: bool,
     search: String,
     last_search: String,
-    invert_color: bool
+    invert_color: bool,
 }
 
 impl eframe::App for Guiao {
@@ -47,11 +47,15 @@ impl eframe::App for Guiao {
             let mut zoom = 1.;
             ctx.input_mut(|input| {
                 if !self.show_search {
-                    if input.consume_key(Modifiers::NONE, Key::R) && self.docs[self.cd].current_page < self.docs[self.cd].nb_pages {
+                    if input.consume_key(Modifiers::NONE, Key::R)
+                        && self.docs[self.cd].current_page < self.docs[self.cd].nb_pages
+                    {
                         self.docs[self.cd].current_page += 1;
                         self.docs[self.cd].page = None;
                     }
-                    if input.consume_key(Modifiers::NONE, Key::C) && self.docs[self.cd].current_page>1 {
+                    if input.consume_key(Modifiers::NONE, Key::C)
+                        && self.docs[self.cd].current_page > 1
+                    {
                         self.docs[self.cd].current_page -= 1;
                         self.docs[self.cd].page = None;
                     }
@@ -65,10 +69,10 @@ impl eframe::App for Guiao {
                         self.show_search = true;
                     }
                     if input.consume_key(Modifiers::SHIFT, Key::Tab) {
-                        self.cd = (self.cd+self.docs.len()-1)%self.docs.len();
+                        self.cd = (self.cd + self.docs.len() - 1) % self.docs.len();
                     }
                     if input.consume_key(Modifiers::NONE, Key::Tab) {
-                        self.cd = (self.cd+1)%self.docs.len();
+                        self.cd = (self.cd + 1) % self.docs.len();
                     }
                     if input.consume_key(Modifiers::NONE, Key::Plus) {
                         zoom *= 1.2;
@@ -79,7 +83,10 @@ impl eframe::App for Guiao {
                 }
             });
             if self.show_search {
-                let s = ui.add(egui::TextEdit::singleline(&mut self.search).desired_width(ui.available_width()));
+                let s = ui.add(
+                    egui::TextEdit::singleline(&mut self.search)
+                        .desired_width(ui.available_width()),
+                );
                 if s.lost_focus() {
                     self.show_search = false;
                     if ui.input(|i| i.key_pressed(egui::Key::Enter)) {
@@ -96,9 +103,13 @@ impl eframe::App for Guiao {
                 for (s1, s2) in &self.docs[self.cd].replace {
                     last_search = last_search.replace(s1, s2);
                 }
-                let i = self.docs[self.cd].index.lines().rev().find(|l| *l.split(' ').next().unwrap()<=*last_search.as_str());
+                let i = self.docs[self.cd]
+                    .index
+                    .lines()
+                    .rev()
+                    .find(|l| *l.split(' ').next().unwrap() <= *last_search.as_str());
                 let pos = if let Some(i) = i {
-                    i.split(' ').last().unwrap().parse().unwrap()
+                    i.split(' ').next_back().unwrap().parse().unwrap()
                 } else {
                     1
                 };
@@ -116,7 +127,13 @@ impl eframe::App for Guiao {
                 let mut ro = RenderOptionsBuilder::default().build().unwrap();
                 ro.resolution = pdf2image::DPI::Uniform(self.docs[self.cd].resolution);
                 ro.pdftocairo = true;
-                let image = self.docs[self.cd].pdf.render(pdf2image::Pages::Single(self.docs[self.cd].current_page), ro).unwrap();
+                let image = self.docs[self.cd]
+                    .pdf
+                    .render(
+                        pdf2image::Pages::Single(self.docs[self.cd].current_page),
+                        ro,
+                    )
+                    .unwrap();
                 let mut image = image[0].clone();
                 if self.invert_color {
                     image.invert();
@@ -125,22 +142,39 @@ impl eframe::App for Guiao {
                 let dim = image.dimensions();
                 //println!("{} {}", dim.0, dim.1);
                 let image = image.as_raw();
-                let page = ColorImage::from_rgba_unmultiplied([dim.0.try_into().unwrap(), dim.1.try_into().unwrap()], image);
+                let page = ColorImage::from_rgba_unmultiplied(
+                    [dim.0.try_into().unwrap(), dim.1.try_into().unwrap()],
+                    image,
+                );
                 let to = TextureOptions {
                     magnification: TextureFilter::Linear,
                     minification: TextureFilter::Linear,
                     wrap_mode: TextureWrapMode::ClampToEdge,
-                    mipmap_mode: None
+                    mipmap_mode: None,
                 };
                 self.docs[self.cd].page = Some(ui.ctx().load_texture("page", page, to));
                 self.docs[self.cd].dimension = dim;
             }
-            
-            let plot = Plot::new(self.cd).data_aspect(1.0).show_x(false).show_y(false).show_axes([false, false]).show_grid([false, false]).set_margin_fraction(Vec2 { x:0., y: 0.});
-            let page = PlotImage::new(self.docs[self.cd].page.as_ref().unwrap(), PlotPoint::new(0., 0.), vec2(self.docs[self.cd].dimension.0 as f32, self.docs[self.cd].dimension.1 as f32));
+
+            let plot = Plot::new(self.cd)
+                .data_aspect(1.0)
+                .show_x(false)
+                .show_y(false)
+                .show_axes([false, false])
+                .show_grid([false, false])
+                .set_margin_fraction(Vec2 { x: 0., y: 0. });
+            let page = PlotImage::new(
+                "",
+                self.docs[self.cd].page.as_ref().unwrap(),
+                PlotPoint::new(0., 0.),
+                vec2(
+                    self.docs[self.cd].dimension.0 as f32,
+                    self.docs[self.cd].dimension.1 as f32,
+                ),
+            );
             plot.show(ui, |plot_ui| {
                 plot_ui.image(page);
-                if zoom!=1. {
+                if zoom != 1. {
                     plot_ui.zoom_bounds(Vec2 { x: zoom, y: zoom }, PlotPoint { x: 0.0, y: 0.0 });
                 }
             });
@@ -150,7 +184,7 @@ impl eframe::App for Guiao {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len()<2 {
+    if args.len() < 2 {
         println!("usage: ./lexicon file1.pdf [file2.pdf ...]");
         return;
     }
@@ -162,7 +196,8 @@ fn main() {
         let index = std::fs::read_to_string(&index_path).unwrap();
         let pdf = PDF::from_file(&path).unwrap();
         let nb_pages = pdf.page_count();
-        let config_str = std::fs::read_to_string(&config_path).unwrap_or_else(|_| {serde_json::to_string(&Config::default()).unwrap()});
+        let config_str = std::fs::read_to_string(&config_path)
+            .unwrap_or_else(|_| serde_json::to_string(&Config::default()).unwrap());
         let config: Config = serde_json::from_str(&config_str).unwrap();
         let doc = Doc {
             current_page: 1,
@@ -173,7 +208,7 @@ fn main() {
             index,
             search_up_to_date: true,
             resolution: config.resolution,
-            replace: config.replace
+            replace: config.replace,
         };
         docs.push(doc);
     }
@@ -183,7 +218,7 @@ fn main() {
         show_search: false,
         search: String::new(),
         last_search: String::new(),
-        invert_color: false
+        invert_color: false,
     };
     let options = eframe::NativeOptions::default();
     eframe::run_native(
