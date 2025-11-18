@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eframe = { version = "0.32", default-features = false, features = ["glow", "default_fonts", "wayland"]}
-egui_plot = "0.33.*"
+eframe = { version = "0.33", default-features = false, features = ["glow", "default_fonts", "wayland"]}
+egui_plot = "0.34.*"
 pdf2image = "0.1.*"
 serde = { version = "1.*", features = ["derive"] }
 serde_json = "1.*"
